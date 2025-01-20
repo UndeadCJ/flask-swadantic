@@ -3,6 +3,7 @@ from typing import Type, Union
 from pydantic import BaseModel
 from typing_extensions import get_origin, get_args
 
+from src.endpoint import EndpointMeta
 from src.response_schema import ResponseSchema, BodyType
 
 
@@ -110,6 +111,72 @@ class BaseSchemaProcessor:
 
         # Default empty schema if type cannot be processed
         return {}
+
+    def _process_properties(self, properties: dict, required_fields: list[str]):
+        """
+        Process the properties of an object to generate query parameters.
+
+        Args:
+            properties (dict): Properties of the schema.
+
+        Returns:
+            None
+        """
+        query_params = []
+
+        for field_name, field_info in properties.items():
+            # Skip references for now
+            if "$ref" in field_info:
+                continue
+
+            param = {
+                "name": field_name,
+                "in": "query",
+                "schema": {"type": field_info["type"]},
+                "description": field_info.get("title", f"{field_name} query parameter"),
+                "required": field_name in required_fields,
+            }
+            query_params.append(param)
+
+        return query_params
+
+    def _convert_to_openapi_query_params(self, schema: dict):
+        """
+        Converts a JSON schema structure into OpenAPI query parameters.
+
+        Args:
+            schema (dict): Structure with schemas in the format {"Model": {...}}.
+
+        Returns:
+            list[dict]: List of parameters in OpenAPI query parameter format.
+        """
+        # Process each schema in the provided JSON structure
+        query_params = []
+        for model_name, model_schema in schema.items():
+            properties = model_schema.get("properties", {})
+            required_fields = model_schema.get("required", [])
+            query_params.extend(self._process_properties(properties, required_fields))
+
+        return query_params
+
+    def _map_query(self, endpoint: EndpointMeta):
+        schemas = self._get_model_schema(endpoint.query)
+
+        return self._convert_to_openapi_query_params(schemas)
+
+    def _map_body(self, endpoint: EndpointMeta):
+        schemas = self._get_model_schema(endpoint.body)
+        if isinstance(schemas, list):
+            for schema in schemas:
+                self.update_model_schemas(schema)
+        else:
+            self.update_model_schemas(schemas)
+
+        return {
+            "content": {
+                "application/json": {"schema": self._get_model_reference(endpoint.body)}
+            }
+        }
 
     def _map_responses(self, responses: list[ResponseSchema]):
         data = {}

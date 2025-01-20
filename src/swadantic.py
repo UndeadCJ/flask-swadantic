@@ -95,20 +95,6 @@ class Swadantic(BaseSchemaProcessor):
 
         self._schemas.append(schema)
 
-    def _map_body(self, endpoint: EndpointMeta):
-        schemas = self._get_model_schema(endpoint.body)
-        if isinstance(schemas, list):
-            for schema in schemas:
-                self.update_model_schemas(schema)
-        else:
-            self.update_model_schemas(schemas)
-
-        return {
-            "content": {
-                "application/json": {"schema": self._get_model_reference(endpoint.body)}
-            }
-        }
-
     def _map_endpoints(self, endpoints: list[EndpointMeta]) -> dict:
         """
         Maps endpoints to the OpenAPI format.
@@ -128,6 +114,7 @@ class Swadantic(BaseSchemaProcessor):
                 "description": endpoint.description,
                 "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
                 "tags": endpoint.tags,
+                "parameters": self._map_query(endpoint) if endpoint.query else None,
                 "requestBody": self._map_body(endpoint) if endpoint.body else None,
                 "responses": self._map_responses(endpoint.responses)
                 if endpoint.responses

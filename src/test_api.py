@@ -40,10 +40,13 @@ def get_test(name: str):
 @test_schema.register_endpoint(
     summary="Create Color",
     description="",
+    query=Color,
     body=[Color, User],
     responses=[
         ResponseSchema(
-            200, list[str, float, bool], description="Returns a success message"
+            200,
+            Union[list[str, float, bool], Color],
+            description="Returns a success message",
         )
     ],
     tags=["Abacate"],

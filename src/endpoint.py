@@ -11,6 +11,7 @@ class EndpointMeta:
         summary: str,
         function_name: str,
         description: str | None = None,
+        query: Type[BaseModel] | list[Type[BaseModel]] | None = None,
         body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
         responses: list[ResponseSchema] | None = None,
         tags: list[str] | None = None,
@@ -20,6 +21,7 @@ class EndpointMeta:
         self.summary = summary
         self.description = description
         self.function_name = function_name
+        self.query = query
         self.body = body
         self.responses = responses
         self.tags = tags
