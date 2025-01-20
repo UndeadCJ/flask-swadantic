@@ -4,6 +4,7 @@ from flask import Flask, Blueprint
 
 from src.api_spec_view import APISpecsView
 from src.info_schema import InfoSchema
+from src.schema import Schema
 from src.swagger_bp import swagger_bp
 
 
@@ -11,6 +12,7 @@ class Swadantic:
     def __init__(self, info_schema: InfoSchema, app: Flask | None = None):
         self._open_api_version = "3.1.1"
         self._info_schema = info_schema
+        self._schemas: list[Schema] = []
 
         if app is not None:
             self.init_app(app)
@@ -37,3 +39,6 @@ class Swadantic:
             "openapi": self._open_api_version,
             "info": self._info_schema,
         }
+
+    def register_schema(self, schema: Schema):
+        self._schemas.append(schema)
