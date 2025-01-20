@@ -5,6 +5,7 @@ from flask import Blueprint
 from pydantic import BaseModel
 
 from src.endpoint import EndpointMeta
+from src.response_schema import ResponseSchema
 
 
 class Schema:
@@ -15,13 +16,23 @@ class Schema:
 
     def register_endpoint(
         self,
-        name: str | None = None,
+        summary: str | None = None,
+        description: str | None = None,
         body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
+        responses: list[ResponseSchema] | None = None,
+        tags: list[str] | None = [],
     ):
         def inner(func: FunctionType):
             # Registers the endpoint metadata
             self.endpoints.append(
-                EndpointMeta(name or func.__name__, func.__name__, body)
+                EndpointMeta(
+                    summary or func.__name__,
+                    func.__name__,
+                    description,
+                    body,
+                    responses,
+                    tags,
+                )
             )
             return func
 

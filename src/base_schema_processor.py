@@ -2,6 +2,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
+from src.response_schema import ResponseSchema
+
 
 class BaseSchemaProcessor:
     def __init__(self):
@@ -62,6 +64,21 @@ class BaseSchemaProcessor:
 
         class_name = model.__name__.split(".")[-1]
         return {"$ref": f"#/components/schemas/{class_name}"}
+
+    def _map_responses(self, responses: list[ResponseSchema]):
+        data = {}
+
+        for response_schema in responses:
+            if isinstance(response_schema.body, list):
+                schema = list(map(self._get_model_reference, response_schema.body))
+            else:
+                schema = self._get_model_reference(response_schema.body)
+
+            data[response_schema.status_code] = {
+                "content": {"application/json": {"schema": {"oneOf": schema}}}
+            }
+
+        return data
 
     def update_model_schemas(self, schemas: dict):
         """

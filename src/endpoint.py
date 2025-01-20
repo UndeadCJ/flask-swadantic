@@ -2,19 +2,27 @@ from typing import Type
 
 from pydantic import BaseModel
 
+from src.response_schema import ResponseSchema
+
 
 class EndpointMeta:
     def __init__(
         self,
-        name: str,
+        summary: str,
         function_name: str,
+        description: str | None = None,
         body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
+        responses: list[ResponseSchema] | None = None,
+        tags: list[str] | None = None,
         rule: str | None = None,
         method: str | None = None,
     ):
-        self.name = name
+        self.summary = summary
+        self.description = description
         self.function_name = function_name
         self.body = body
+        self.responses = responses
+        self.tags = tags
         self.rule = rule
         self.method = method
 

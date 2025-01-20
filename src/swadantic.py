@@ -124,9 +124,14 @@ class Swadantic(BaseSchemaProcessor):
         for endpoint in endpoints:
             method = endpoint.method.lower()
             meta[endpoint.rule][method] = {
-                "summary": endpoint.name,
-                "operationId": f"{endpoint.name.lower().replace(' ', '-')}-{method}",
+                "summary": endpoint.summary,
+                "description": endpoint.description,
+                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
+                "tags": endpoint.tags,
                 "requestBody": self._map_body(endpoint) if endpoint.body else None,
+                "responses": self._map_responses(endpoint.responses)
+                if endpoint.responses
+                else None,
             }
 
         return meta
