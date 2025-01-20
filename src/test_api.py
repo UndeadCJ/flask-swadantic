@@ -1,3 +1,5 @@
+from typing import Union
+
 from flask import Blueprint
 from pydantic import BaseModel
 
@@ -24,7 +26,9 @@ class Color(BaseModel):
     summary="Get Color",
     description="Test test abacate verde",
     responses=[
-        ResponseSchema(200, [Color, User], description="Returns a user or color")
+        ResponseSchema(
+            200, Union[User, Color, str], description="Returns a user or color"
+        )
     ],
     tags=["Abacate"],
 )
@@ -37,8 +41,26 @@ def get_test(name: str):
     summary="Create Color",
     description="",
     body=[Color, User],
-    responses=[ResponseSchema(200, str, description="Returns a success message")],
+    responses=[
+        ResponseSchema(
+            200, list[str, float, bool], description="Returns a success message"
+        )
+    ],
     tags=["Abacate"],
 )
 def post_test():
+    return "", 200
+
+
+@test_bp.post("/test/abacate/<age>")
+@test_schema.register_endpoint(
+    summary="Create Age",
+    description="",
+    body=[Color, User],
+    responses=[
+        ResponseSchema(200, list[Color], description="Returns a success message")
+    ],
+    tags=["Abacate"],
+)
+def post_age():
     return "", 200
