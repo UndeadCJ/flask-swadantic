@@ -1,16 +1,10 @@
 from types import FunctionType
+from typing import Type
 
 from flask import Blueprint
+from pydantic import BaseModel
 
-
-class EndpointMeta:
-    def __init__(
-        self,
-        name: str,
-        function_name: str,
-    ):
-        self.name = name
-        self.function_name = function_name
+from src.endpoint import EndpointMeta
 
 
 class Schema:
@@ -22,14 +16,12 @@ class Schema:
     def register_endpoint(
         self,
         name: str | None = None,
+        body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
     ):
         def inner(func: FunctionType):
             # Registers the endpoint metadata
             self.endpoints.append(
-                EndpointMeta(
-                    name or func.__name__,
-                    func.__name__,
-                )
+                EndpointMeta(name or func.__name__, func.__name__, body)
             )
             return func
 
