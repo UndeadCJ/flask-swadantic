@@ -3,8 +3,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from src.path import Path
-from src.response_schema import ResponseSchema
+from path import Path
+from response_schema import ResponseSchema
 
 
 class EndpointMeta:

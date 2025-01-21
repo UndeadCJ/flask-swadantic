@@ -3,12 +3,12 @@ from functools import cached_property
 
 from flask import Flask, Blueprint
 
-from src.api_spec_view import APISpecsView
-from src.base_schema_processor import BaseSchemaProcessor
-from src.endpoint import Endpoint, EndpointMeta
-from src.info_schema import InfoSchema
-from src.schema import Schema
-from src.swagger_bp import swagger_bp
+from api_spec_view import APISpecsView
+from base_schema_processor import BaseSchemaProcessor
+from endpoint import Endpoint, EndpointMeta
+from info_schema import InfoSchema
+from schema import Schema
+from swagger_bp import swagger_bp
 
 
 class Swadantic(BaseSchemaProcessor):

@@ -4,8 +4,8 @@ from typing import Type, Union
 from pydantic import BaseModel
 from typing_extensions import get_origin, get_args
 
-from src.endpoint import EndpointMeta
-from src.response_schema import ResponseSchema, BodyType
+from endpoint import EndpointMeta
+from response_schema import ResponseSchema, BodyType
 
 
 class BaseSchemaProcessor:

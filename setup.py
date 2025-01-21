@@ -6,7 +6,6 @@ LONG_DESCRIPTION = "Flask-Swadantic is a library to generate OpenAPI documentati
 
 # Setting up
 setup(
-    # the name must match the folder name 'verysimplemodule'
     name="flask-swadantic",
     version=VERSION,
     author="Lucas de Freitas Ponick",
@@ -14,8 +13,12 @@ setup(
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
-    install_requires=[],  # add any additional packages that
+    install_requires=[
+        "flask=>=3.1.0,<4.0.0",
+        "pydantic=>=2.10.5,<3.0.0",
+    ],  # add any additional packages that
     # needs to be installed along with your package. Eg: 'caer'
+    python_requires=">=3.10",
     keywords=["python", "first package"],
     classifiers=[
         "Topic :: Software Development :: Documentation",

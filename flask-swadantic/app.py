@@ -1,8 +1,8 @@
 from flask import Flask
 
-from src.info_schema import InfoSchema
-from src.swadantic import Swadantic
-from src.test_api import test_bp, test_schema
+from info_schema import InfoSchema
+from swadantic import Swadantic
+from test_api import test_bp, test_schema
 
 app = Flask(__name__)
 swadantic = Swadantic(
