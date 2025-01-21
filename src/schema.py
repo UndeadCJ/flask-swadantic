@@ -31,6 +31,7 @@ class Schema:
                     func.__name__,
                     description,
                     query,
+                    [],
                     body,
                     responses,
                     tags,

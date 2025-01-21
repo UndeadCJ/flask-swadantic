@@ -1,3 +1,4 @@
+from types import UnionType
 from typing import Type, Union
 
 from pydantic import BaseModel
@@ -30,7 +31,9 @@ class BaseSchemaProcessor:
             parsed_schema[defs[key]["title"]] = defs[key]
         return parsed_schema
 
-    def _get_model_schema(self, model) -> dict | list[dict]:
+    def _get_model_schema(
+        self, model: BaseModel | list[BaseModel]
+    ) -> dict | list[dict]:
         """
         Returns a JSON schema representation for the given model or list of models.
 
@@ -80,6 +83,7 @@ class BaseSchemaProcessor:
         origin = get_origin(body)
 
         if origin:
+            print("ORIGIN", origin)
             if origin is list:
                 parsed_items = list(map(self._parse_response_body, get_args(body)))
 
@@ -93,7 +97,7 @@ class BaseSchemaProcessor:
                     "items": items_schema,
                 }
 
-            if origin is Union:
+            if origin is Union or origin is UnionType:
                 union_schemas = list(map(self._parse_response_body, get_args(body)))
                 return {"oneOf": union_schemas}
 
@@ -160,11 +164,53 @@ class BaseSchemaProcessor:
         return query_params
 
     def _map_query(self, endpoint: EndpointMeta):
+        """
+        Maps an endpoint's query models to OpenAPI query parameters.
+
+        Args:
+            endpoint (EndpointMeta): The endpoint for which query parameters need to be generated.
+
+        Returns:
+            list[dict]: List of OpenAPI query parameters.
+        """
         schemas = self._get_model_schema(endpoint.query)
 
         return self._convert_to_openapi_query_params(schemas)
 
+    def _map_path(self, endpoint: EndpointMeta):
+        """
+        Maps an endpoint's path parameters to OpenAPI path parameters.
+
+        Args:
+            endpoint (EndpointMeta): The endpoint containing path parameters.
+
+        Returns:
+            list[dict]: List of OpenAPI path parameters.
+        """
+        params = []
+        for param in endpoint.path:
+            params.append(
+                {
+                    "name": param["name"],
+                    "in": "path",
+                    "required": True,
+                    "schema": {"type": "string"},
+                    "description": param["description"],
+                }
+            )
+
+        return params
+
     def _map_body(self, endpoint: EndpointMeta):
+        """
+        Maps an endpoint's body schema to OpenAPI request body format.
+
+        Args:
+            endpoint (EndpointMeta): The endpoint containing the body schema.
+
+        Returns:
+            dict: OpenAPI request body content.
+        """
         schemas = self._get_model_schema(endpoint.body)
         if isinstance(schemas, list):
             for schema in schemas:
@@ -179,6 +225,15 @@ class BaseSchemaProcessor:
         }
 
     def _map_responses(self, responses: list[ResponseSchema]):
+        """
+        Maps a list of response schemas to OpenAPI response objects.
+
+        Args:
+            responses (list[ResponseSchema]): A list of response schemas to process.
+
+        Returns:
+            dict: OpenAPI response objects mapped by status code.
+        """
         data = {}
 
         for response_schema in responses:

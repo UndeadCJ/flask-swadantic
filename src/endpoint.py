@@ -1,7 +1,9 @@
+import inspect
 from typing import Type
 
 from pydantic import BaseModel
 
+from src.path import Path
 from src.response_schema import ResponseSchema
 
 
@@ -12,6 +14,7 @@ class EndpointMeta:
         function_name: str,
         description: str | None = None,
         query: Type[BaseModel] | list[Type[BaseModel]] | None = None,
+        path: list[Path] = None,
         body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
         responses: list[ResponseSchema] | None = None,
         tags: list[str] | None = None,
@@ -22,6 +25,7 @@ class EndpointMeta:
         self.description = description
         self.function_name = function_name
         self.query = query
+        self.path = path
         self.body = body
         self.responses = responses
         self.tags = tags
@@ -35,6 +39,7 @@ class Endpoint:
         self.endpoint = None
         self.method = None
         self.function_name = None
+        self.path = []
 
     def add_url_rule(
         self, rule, endpoint, view_func, provide_automatic_options=True, **options
@@ -43,3 +48,17 @@ class Endpoint:
         self.endpoint = endpoint
         self.method = options.get("methods")[0]
         self.function_name = view_func.__name__
+
+        params = inspect.signature(view_func).parameters
+        mapped_params = []
+        for param in params:
+            if isinstance(params[param].default, Path):
+                mapped_params.append(
+                    {
+                        "name": params[param].name,
+                        "type": params[param].annotation,
+                        "description": params[param].default.description,
+                    }
+                )
+
+        self.path = mapped_params

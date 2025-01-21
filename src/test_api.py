@@ -3,6 +3,7 @@ from typing import Union
 from flask import Blueprint
 from pydantic import BaseModel
 
+from src.path import Path
 from src.response_schema import ResponseSchema
 from src.schema import Schema
 
@@ -32,7 +33,7 @@ class Color(BaseModel):
     ],
     tags=["Abacate"],
 )
-def get_test(name: str):
+def get_test(name: str = Path(description="Name of the color")):
     return f"{name}", 200
 
 
@@ -45,7 +46,7 @@ def get_test(name: str):
     responses=[
         ResponseSchema(
             200,
-            Union[list[str, float, bool], Color],
+            list[str, float, bool] | Color,
             description="Returns a success message",
         )
     ],

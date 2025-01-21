@@ -92,6 +92,7 @@ class Swadantic(BaseSchemaProcessor):
             # Update the endpoint metadata
             endpoint_meta.rule = endpoint.rule
             endpoint_meta.method = endpoint.method
+            endpoint_meta.path = endpoint.path
 
         self._schemas.append(schema)
 
@@ -108,13 +109,16 @@ class Swadantic(BaseSchemaProcessor):
         meta = defaultdict(dict)
 
         for endpoint in endpoints:
+            query_params = self._map_query(endpoint) if endpoint.query else []
+            path_params = self._map_path(endpoint) if endpoint.path else []
+
             method = endpoint.method.lower()
             meta[endpoint.rule][method] = {
                 "summary": endpoint.summary,
                 "description": endpoint.description,
                 "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
                 "tags": endpoint.tags,
-                "parameters": self._map_query(endpoint) if endpoint.query else None,
+                "parameters": [*query_params, *path_params],
                 "requestBody": self._map_body(endpoint) if endpoint.body else None,
                 "responses": self._map_responses(endpoint.responses)
                 if endpoint.responses
