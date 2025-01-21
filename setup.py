@@ -14,8 +14,8 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     install_requires=[
-        "flask=>=3.1.0,<4.0.0",
-        "pydantic=>=2.10.5,<3.0.0",
+        "flask",
+        "pydantic",
     ],  # add any additional packages that
     # needs to be installed along with your package. Eg: 'caer'
     python_requires=">=3.10",
