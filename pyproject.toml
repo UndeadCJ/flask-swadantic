@@ -1,21 +1,16 @@
-[project]
+[tool.poetry]
 name = "flask-swadantic"
 version = "1.0"
 description = ""
-authors = [
-    {name = "Lucas de Freitas Ponick",email = "lucas_ponick@hotmail.com"}
-]
-readme = "README.md"
-requires-python = ">=3.13"
+authors = ["Lucas de Freitas Ponick <lucas_ponick@hotmail.com>"]
 
-dependencies = [
-    "flask (>=3.1.0,<4.0.0)",
-    "pydantic (>=2.10.5,<3.0.0)"
-]
+[tool.poetry.dependencies]
+python = ">=3.10"
+flask = ">=3.1.0"
+pydantic = ">=2.10.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.9.2"
-setuptools = "^75.8.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0", "setuptools>=75.8.0"]
