@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flask-swadantic"
-version = "1.0"
+version = "0.1"
 description = ""
 authors = ["Lucas de Freitas Ponick <lucas_ponick@hotmail.com>"]
 

@@ -3,8 +3,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from path import Path
-from response_schema import ResponseSchema
+from flask_swadantic.path import Path
+from flask_swadantic.response_schema import ResponseSchema
 
 
 class EndpointMeta:

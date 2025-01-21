@@ -4,8 +4,8 @@ from typing import Type, Union
 from pydantic import BaseModel
 from typing_extensions import get_origin, get_args
 
-from endpoint import EndpointMeta
-from response_schema import ResponseSchema, BodyType
+from flask_swadantic.endpoint import EndpointMeta
+from flask_swadantic.response_schema import ResponseSchema, BodyType
 
 
 class BaseSchemaProcessor:

@@ -3,9 +3,9 @@ from typing import Union
 from flask import Blueprint
 from pydantic import BaseModel
 
-from path import Path
-from response_schema import ResponseSchema
-from schema import Schema
+from flask_swadantic.path import Path
+from flask_swadantic.response_schema import ResponseSchema
+from flask_swadantic.schema import Schema
 
 test_bp = Blueprint("test_bp", __name__)
 test_schema = Schema(blueprint=test_bp, tags=["Test"])

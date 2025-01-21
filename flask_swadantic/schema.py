@@ -4,8 +4,8 @@ from typing import Type
 from flask import Blueprint
 from pydantic import BaseModel
 
-from endpoint import EndpointMeta
-from response_schema import ResponseSchema
+from flask_swadantic.response_schema import ResponseSchema
+from flask_swadantic.endpoint import EndpointMeta
 
 
 class Schema:
