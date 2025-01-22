@@ -31,8 +31,8 @@ class BaseSchemaProcessor:
             parsed_schema[defs[key]["title"]] = defs[key]
         return parsed_schema
 
-    def _get_model_schema(
-        self, model: BaseModel | list[BaseModel]
+    def _generate_model_schema(
+        self, model: Type[BaseModel] | list[Type[BaseModel]]
     ) -> dict | list[dict]:
         """
         Returns a JSON schema representation for the given model or list of models.
@@ -44,7 +44,7 @@ class BaseSchemaProcessor:
             dict | list[dict]: Processed schema for the model(s).
         """
         if isinstance(model, list):
-            return list(map(self._get_model_schema, model))
+            return list(map(self._generate_model_schema, model))
 
         schema = model.model_json_schema(ref_template="#/components/schemas/{model}")
         parsed_schema = self._parse_defs(schema)
@@ -67,8 +67,25 @@ class BaseSchemaProcessor:
         if isinstance(model, list):
             return {"oneOf": list(map(self._get_model_reference, model))}
 
-        class_name = model.__name__.split(".")[-1]
+        class_name = self._get_model_name(model)
+        if class_name not in self._models:
+            self.update_model_schemas(self._generate_model_schema(model))
+
         return {"$ref": f"#/components/schemas/{class_name}"}
+
+    def _get_model_schema(self, reference: str = None, model: Type[BaseModel] = None):
+        if reference:
+            return self._models[reference.split("/")[-1]]
+
+        if model:
+            class_name = self._get_model_name(model)
+            if class_name not in self._models:
+                self.update_model_schemas(self._generate_model_schema(model))
+
+            return self._models[class_name]
+
+    def _get_model_name(self, model: Type[BaseModel]):
+        return model.__name__.split(".")[-1]
 
     def _parse_response_body(self, body: BodyType) -> dict:
         """
@@ -154,13 +171,7 @@ class BaseSchemaProcessor:
             list[dict]: List of parameters in OpenAPI query parameter format.
         """
         # Process each schema in the provided JSON structure
-        query_params = []
-        for model_name, model_schema in schema.items():
-            properties = model_schema.get("properties", {})
-            required_fields = model_schema.get("required", [])
-            query_params.extend(self._process_properties(properties, required_fields))
-
-        return query_params
+        return self._process_properties(schema["properties"], schema["required"])
 
     def _map_query(self, endpoint: EndpointMeta):
         """
@@ -172,9 +183,8 @@ class BaseSchemaProcessor:
         Returns:
             list[dict]: List of OpenAPI query parameters.
         """
-        schemas = self._get_model_schema(endpoint.query)
-
-        return self._convert_to_openapi_query_params(schemas)
+        schema = self._get_model_schema(model=endpoint.query)
+        return self._convert_to_openapi_query_params(schema)
 
     def _map_path(self, endpoint: EndpointMeta):
         """
@@ -210,13 +220,6 @@ class BaseSchemaProcessor:
         Returns:
             dict: OpenAPI request body content.
         """
-        schemas = self._get_model_schema(endpoint.body)
-        if isinstance(schemas, list):
-            for schema in schemas:
-                self.update_model_schemas(schema)
-        else:
-            self.update_model_schemas(schemas)
-
         return {
             "content": {
                 "application/json": {"schema": self._get_model_reference(endpoint.body)}
