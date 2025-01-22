@@ -144,7 +144,7 @@ class BaseSchemaProcessor:
             elif "anyOf" in field_info:
                 schema = {"anyOf": field_info["anyOf"]}
             elif "type" in field_info:
-                schema = {"type": field_info["type"]}
+                schema = {"type": field_info["type"], "enum": field_info.get("enum")}
 
             param = {
                 "name": field_name,
