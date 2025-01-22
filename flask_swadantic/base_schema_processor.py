@@ -73,17 +73,6 @@ class BaseSchemaProcessor:
 
         return {"$ref": f"#/components/schemas/{class_name}"}
 
-    def _get_model_schema(self, reference: str = None, model: Type[BaseModel] = None):
-        if reference:
-            return self._models[reference.split("/")[-1]]
-
-        if model:
-            class_name = self._get_model_name(model)
-            if class_name not in self._models:
-                self.update_model_schemas(self._generate_model_schema(model))
-
-            return self._models[class_name]
-
     def _get_model_name(self, model: Type[BaseModel]):
         return model.__name__.split(".")[-1]
 
@@ -149,10 +138,18 @@ class BaseSchemaProcessor:
             if "$ref" in field_info:
                 continue
 
+            schema = {}
+            if field_info.get("type") == "array":
+                schema = {"type": "array", "items": field_info.get("items", {})}
+            elif "anyOf" in field_info:
+                schema = {"anyOf": field_info["anyOf"]}
+            elif "type" in field_info:
+                schema = {"type": field_info["type"]}
+
             param = {
                 "name": field_name,
                 "in": "query",
-                "schema": {"type": field_info["type"]},
+                "schema": schema,
                 "description": field_info.get("title", f"{field_name} query parameter"),
                 "required": field_name in required_fields,
             }
@@ -171,7 +168,9 @@ class BaseSchemaProcessor:
             list[dict]: List of parameters in OpenAPI query parameter format.
         """
         # Process each schema in the provided JSON structure
-        return self._process_properties(schema["properties"], schema["required"])
+        return self._process_properties(
+            schema.get("properties", {}), schema.get("required", [])
+        )
 
     def _map_query(self, endpoint: EndpointMeta):
         """
@@ -183,7 +182,9 @@ class BaseSchemaProcessor:
         Returns:
             list[dict]: List of OpenAPI query parameters.
         """
-        schema = self._get_model_schema(model=endpoint.query)
+
+        # The schema is generated but not saved because it should not appear in the OpenAPI specification.
+        schema = self._generate_model_schema(endpoint.query)
         return self._convert_to_openapi_query_params(schema)
 
     def _map_path(self, endpoint: EndpointMeta):
