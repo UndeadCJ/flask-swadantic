@@ -18,7 +18,7 @@ class User(BaseModel):
 
 class Color(BaseModel):
     user: User
-    name: str
+    name: str = "Abacate"
     hex: str
 
 

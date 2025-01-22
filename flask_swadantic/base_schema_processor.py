@@ -150,6 +150,7 @@ class BaseSchemaProcessor:
                 "name": field_name,
                 "in": "query",
                 "schema": schema,
+                "default": field_info.get("default"),
                 "description": field_info.get("title", f"{field_name} query parameter"),
                 "required": field_name in required_fields,
             }
