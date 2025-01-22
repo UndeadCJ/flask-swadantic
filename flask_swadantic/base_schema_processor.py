@@ -83,7 +83,6 @@ class BaseSchemaProcessor:
         origin = get_origin(body)
 
         if origin:
-            print("ORIGIN", origin)
             if origin is list:
                 parsed_items = list(map(self._parse_response_body, get_args(body)))
 
