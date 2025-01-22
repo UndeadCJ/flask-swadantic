@@ -184,7 +184,9 @@ class BaseSchemaProcessor:
         """
 
         # The schema is generated but not saved because it should not appear in the OpenAPI specification.
-        schema = self._generate_model_schema(endpoint.query)
+        schema = self._generate_model_schema(endpoint.query)[
+            self._get_model_name(endpoint.query)
+        ]
         return self._convert_to_openapi_query_params(schema)
 
     def _map_path(self, endpoint: EndpointMeta):
