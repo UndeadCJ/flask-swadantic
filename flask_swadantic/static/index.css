@@ -15,7 +15,3 @@ body {
     background: #fafafa;
 }
 
-/* Esconde a topbar */
-.topbar {
-    display: none !important;
-}

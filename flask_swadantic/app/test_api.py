@@ -1,14 +1,19 @@
-from typing import Union
+import enum
 
 from flask import Blueprint
 from pydantic import BaseModel
 
-from flask_swadantic.path import Path
-from flask_swadantic.response_schema import ResponseSchema
-from flask_swadantic.schema import Schema
+from flask_swadantic.schema.pathschema import PathSchema
+from flask_swadantic.schema.response import ResponseSchema
+from flask_swadantic.schema.schema import Schema
 
 test_bp = Blueprint("test_bp", __name__)
 test_schema = Schema(blueprint=test_bp, tags=["Test"])
+
+
+class Test(enum.Enum):
+    A = "A"
+    B = "B"
 
 
 class User(BaseModel):
@@ -20,29 +25,36 @@ class Color(BaseModel):
     user: User
     name: str = "Abacate"
     hex: str
+    aba: Test = Test.A
 
 
 @test_bp.get("/test/<string:name>")
 @test_schema.register_endpoint(
     summary="Get Color",
     description="Test test abacate verde",
-    responses=[
-        ResponseSchema(
-            200, Union[User, Color, str], description="Returns a user or color"
-        )
-    ],
+    responses=[ResponseSchema(200, str, description="Returns a user or color")],
     tags=["Abacate"],
 )
-def get_test(name: str = Path(description="Name of the color")):
+def get_test(name: str = PathSchema(description="Name of the color")):
     return f"{name}", 200
 
 
-@test_bp.post("/test/<age>")
+@test_bp.get("/test")
+@test_schema.register_endpoint(
+    summary="Get List of Color",
+    description="Test test abacate verde",
+    responses=[ResponseSchema(200, str, description="Returns a user or color")],
+    tags=["Abacate"],
+)
+def list_test(name: str = PathSchema(description="Name of the color")):
+    return f"{name}", 200
+
+
+@test_bp.post("/test")
 @test_schema.register_endpoint(
     summary="Create Color",
     description="",
-    query=Color,
-    body=[Color, User],
+    body=Color,
     responses=[
         ResponseSchema(
             200,
@@ -60,10 +72,7 @@ def post_test():
 @test_schema.register_endpoint(
     summary="Create Age",
     description="",
-    body=[Color, User],
-    responses=[
-        ResponseSchema(200, list[Color], description="Returns a success message")
-    ],
+    responses=[ResponseSchema(200, str, description="Returns a success message")],
     tags=["Abacate"],
 )
 def post_age():

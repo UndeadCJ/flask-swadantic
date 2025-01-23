@@ -1,14 +1,15 @@
 from types import UnionType
 from typing import Type, Union
-
-from pydantic import BaseModel
 from typing_extensions import get_origin, get_args
 
-from flask_swadantic.endpoint import EndpointMeta
-from flask_swadantic.response_schema import ResponseSchema, BodyType
+from pydantic import BaseModel
+
+from flask_swadantic.schema import ResponseSchema
+from flask_swadantic.schema import EndpointMeta
+from flask_swadantic.schema import BodyType
 
 
-class BaseSchemaProcessor:
+class SchemaProcessor:
     def __init__(self):
         self._models = {}
 
@@ -49,6 +50,7 @@ class BaseSchemaProcessor:
         schema = model.model_json_schema(ref_template="#/components/schemas/{model}")
         parsed_schema = self._parse_defs(schema)
         parsed_schema[schema["title"]] = schema
+
         return parsed_schema
 
     def _get_model_reference(
@@ -69,7 +71,7 @@ class BaseSchemaProcessor:
 
         class_name = self._get_model_name(model)
         if class_name not in self._models:
-            self.update_model_schemas(self._generate_model_schema(model))
+            self._models.update(self._generate_model_schema(model))
 
         return {"$ref": f"#/components/schemas/{class_name}"}
 
@@ -253,11 +255,34 @@ class BaseSchemaProcessor:
 
         return data
 
-    def update_model_schemas(self, schemas: dict):
+    def _map_endpoints(self, endpoints: list[EndpointMeta]) -> dict:
         """
-        Updates the internal models dictionary with new schemas.
+        Maps endpoints to the OpenAPI format.
 
         Args:
-            schemas (dict): Dictionary of schemas to add.
+            endpoints (list[EndpointMeta]): List of endpoint metadata.
+
+        Returns:
+            dict: Mapped endpoints in OpenAPI format.
         """
-        self._models.update(schemas)
+        meta = {}
+
+        for endpoint in endpoints:
+            query_params = self._map_query(endpoint) if endpoint.query else []
+            path_params = self._map_path(endpoint) if endpoint.path else []
+
+            meta[endpoint.rule] = {}
+            method = endpoint.method.lower()
+            meta[endpoint.rule][method] = {
+                "summary": endpoint.summary,
+                "description": endpoint.description,
+                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
+                "tags": endpoint.tags,
+                "parameters": [*query_params, *path_params],
+                "requestBody": self._map_body(endpoint) if endpoint.body else None,
+                "responses": self._map_responses(endpoint.responses)
+                if endpoint.responses
+                else None,
+            }
+
+        return meta

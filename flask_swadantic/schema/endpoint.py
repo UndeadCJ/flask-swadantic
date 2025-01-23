@@ -3,8 +3,8 @@ from typing import Type
 
 from pydantic import BaseModel
 
-from flask_swadantic.path import Path
-from flask_swadantic.response_schema import ResponseSchema
+from flask_swadantic.schema import PathSchema
+from flask_swadantic.schema import ResponseSchema
 
 
 class EndpointMeta:
@@ -14,7 +14,7 @@ class EndpointMeta:
         function_name: str,
         description: str | None = None,
         query: Type[BaseModel] | list[Type[BaseModel]] | None = None,
-        path: list[Path] = None,
+        path: list[PathSchema] = None,
         body: Type[BaseModel] | list[Type[BaseModel]] | None = None,
         responses: list[ResponseSchema] | None = None,
         tags: list[str] | None = None,
@@ -52,7 +52,7 @@ class Endpoint:
         params = inspect.signature(view_func).parameters
         mapped_params = []
         for param in params:
-            if isinstance(params[param].default, Path):
+            if isinstance(params[param].default, PathSchema):
                 mapped_params.append(
                     {
                         "name": params[param].name,

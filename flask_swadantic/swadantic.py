@@ -1,25 +1,21 @@
-from collections import defaultdict
 from functools import cached_property
 
 from flask import Flask, Blueprint
 
+from flask_swadantic.openapi import OpenAPIGenerator
 from flask_swadantic.schema import Schema
-from flask_swadantic.info_schema import InfoSchema
-from flask_swadantic.api_spec_view import APISpecsView
-from flask_swadantic.base_schema_processor import BaseSchemaProcessor
-from flask_swadantic.endpoint import Endpoint, EndpointMeta
+from flask_swadantic.schema import InfoSchema
+from flask_swadantic.app.api_spec_view import APISpecsView
 from flask_swadantic.swagger_bp import swagger_bp
 
 
-class Swadantic(BaseSchemaProcessor):
+class Swadantic:
     def __init__(self, info_schema: InfoSchema, app: Flask | None = None):
         super().__init__()
 
         self._open_api_version = "3.1.1"
         self._info_schema = info_schema
-        self._view_functions = {}
         self._schemas: list[Schema] = []
-        self._paths = {}
 
         if app is not None:
             self.init_app(app)
@@ -52,86 +48,8 @@ class Swadantic(BaseSchemaProcessor):
         app.register_blueprint(spec_bp, url_prefix="/apispec")
 
     def register_schema(self, schema: Schema):
-        """
-        Registers a new schema and processes its endpoints.
-
-        Args:
-            schema (Schema): Schema object containing blueprint and endpoint definitions.
-
-        Raises:
-            ValueError: If the schema's blueprint does not define valid deferred functions
-            ValueError: If an endpoint is not found in the schema's list of endpoints
-        """
-        if not hasattr(schema.blueprint, "deferred_functions") or not isinstance(
-            schema.blueprint.deferred_functions, list
-        ):
-            raise ValueError(
-                "The 'blueprint' provided in the schema does not have a valid 'deferred_functions' attribute."
-            )
-
-        for func in schema.blueprint.deferred_functions:
-            # Captures Flask endpoint information
-            endpoint = Endpoint()
-            func(endpoint)
-
-            # Matches function names between endpoint and schema
-            endpoint_meta = next(
-                (
-                    meta
-                    for meta in schema.endpoints
-                    if meta.function_name == endpoint.function_name
-                ),
-                None,
-            )
-
-            if endpoint_meta is None:
-                raise ValueError(
-                    f"Endpoint '{endpoint.function_name}' was not found in the schema's list of endpoints."
-                )
-
-            # Update the endpoint metadata
-            endpoint_meta.rule = endpoint.rule
-            endpoint_meta.method = endpoint.method
-            endpoint_meta.path = endpoint.path
-
-        self._schemas.append(schema)
-
-    def _map_endpoints(self, endpoints: list[EndpointMeta]) -> dict:
-        """
-        Maps endpoints to the OpenAPI format.
-
-        Args:
-            endpoints (list[EndpointMeta]): List of endpoint metadata.
-
-        Returns:
-            dict: Mapped endpoints in OpenAPI format.
-        """
-        meta = defaultdict(dict)
-
-        for endpoint in endpoints:
-            query_params = self._map_query(endpoint) if endpoint.query else []
-            path_params = self._map_path(endpoint) if endpoint.path else []
-
-            method = endpoint.method.lower()
-            meta[endpoint.rule][method] = {
-                "summary": endpoint.summary,
-                "description": endpoint.description,
-                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
-                "tags": endpoint.tags,
-                "parameters": [*query_params, *path_params],
-                "requestBody": self._map_body(endpoint) if endpoint.body else None,
-                "responses": self._map_responses(endpoint.responses)
-                if endpoint.responses
-                else None,
-            }
-
-        return meta
-
-    def _map_schemas(self):
-        for schema in self._schemas:
-            self._paths.update(self._map_endpoints(schema.endpoints))
-
-        return {"paths": self._paths, "components": {"schemas": self._models}}
+        if schema not in self._schemas:
+            self._schemas.append(schema)
 
     @cached_property
     def get_spec(self) -> dict:
@@ -141,8 +59,9 @@ class Swadantic(BaseSchemaProcessor):
         Returns:
             dict: OpenAPI Specification in JSON format.
         """
+
         return {
             "openapi": self._open_api_version,
             "info": self._info_schema,
-            **self._map_schemas(),
+            **OpenAPIGenerator().generate(self._schemas),
         }
