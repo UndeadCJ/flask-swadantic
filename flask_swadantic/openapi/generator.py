@@ -30,39 +30,46 @@ class OpenAPIGenerator(SchemaProcessor):
 
         endpoint.rule = rule
 
-    def _process_schema(self, schemas: list[Schema]) -> dict[str, list]:
+    def _process_schema(self, schema: Schema) -> list[EndpointMeta]:
         """
-        Processes the provided schemas and extracts prefixes and endpoints.
+        Processes a schema, applying its URL prefix to its endpoints
+        and recursively processing child schemas.
+
+        Args:
+            schema (Schema): The schema to process.
+
+        Returns:
+            list[EndpointMeta]: A list of processed EndpointMeta objects.
+        """
+        endpoints = schema.endpoints
+
+        # Recursively process child schemas
+        for sub_schema in schema.schemas:
+            child_endpoints = self._process_schema(sub_schema)
+            endpoints.extend(child_endpoints)
+
+        # Process endpoints of the current schema
+        for endpoint in endpoints:
+            self._add_prefix_to_endpoint([schema.url_prefix], endpoint)
+
+        return endpoints
+
+    def _process_schemas(self, schemas: list[Schema]) -> list[EndpointMeta]:
+        """
+        Processes a list of schemas to generate a combined list of endpoints.
 
         Args:
             schemas (list[Schema]): A list of Schema objects to process.
 
         Returns:
-            dict[str, list]: A dictionary containing the extracted prefixes and endpoints.
+            list[EndpointMeta]: A list of processed EndpointMeta objects derived from all schemas.
         """
-        result = {"prefix": [], "endpoints": []}
-        stack = list(schemas)
+        endpoints = []
 
-        while stack:
-            schema = stack.pop()
-            result["prefix"].insert(0, schema.url_prefix)
-            result["endpoints"].extend(schema.endpoints)
-            stack.extend(schema.schemas)
+        for schema in schemas:
+            endpoints.extend(self._process_schema(schema))
 
-        return result
-
-    def _map_prefixes_to_endpoints(self, schema_result: dict):
-        """
-        Maps all collected prefixes to their respective endpoints.
-
-        Args:
-            schema_result (dict): A dictionary containing prefixes and a list of endpoints.
-
-        Returns:
-            None
-        """
-        for endpoint in schema_result["endpoints"]:
-            self._add_prefix_to_endpoint(schema_result["prefix"], endpoint)
+        return endpoints
 
     def generate(self, schemas: list[Schema]) -> dict[str, dict]:
         """
@@ -80,10 +87,10 @@ class OpenAPIGenerator(SchemaProcessor):
         if not all(isinstance(schema, Schema) for schema in schemas):
             raise ValueError("All items in 'schemas' must be instances of 'Schema'")
 
-        schema_result = self._process_schema(schemas)
-        self._map_prefixes_to_endpoints(schema_result)
+        endpoints = self._process_schemas(schemas)
+        models = self._models
 
         return {
-            "paths": self._map_endpoints(schema_result["endpoints"]),
-            "components": {"schemas": self._models},
+            "paths": self._map_endpoints(endpoints),
+            "components": {"schemas": models},
         }

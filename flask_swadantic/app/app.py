@@ -3,7 +3,7 @@ from flask import Flask
 from flask_swadantic.app.api_bp import api_bp, api_schema
 from flask_swadantic.schema.info import InfoSchema
 from flask_swadantic.swadantic import Swadantic
-from flask_swadantic.app.test_api import test_bp
+from flask_swadantic.app.test_bp import test_bp
 
 app = Flask(__name__)
 swadantic = Swadantic(

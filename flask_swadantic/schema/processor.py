@@ -109,17 +109,26 @@ class SchemaProcessor:
                 union_schemas = list(map(self._parse_response_body, get_args(body)))
                 return {"oneOf": union_schemas}
 
-        if isinstance(body, type):
-            if body is str:
-                return {"type": "string"}
-            if body is int:
-                return {"type": "integer"}
-            if body is float:
-                return {"type": "number"}
-            if body is bool:
-                return {"type": "boolean"}
-            if issubclass(body, BaseModel):
-                return self._get_model_reference(body)
+        if body is str:
+            return {"type": "string"}
+        elif isinstance(body, str):
+            return {"type": "string", "const": body}
+        elif body is int:
+            return {"type": "integer"}
+        elif isinstance(body, int):
+            return {"type": "integer", "const": body}
+        elif body is float:
+            return {"type": "number"}
+        elif isinstance(body, float):
+            return {"type": "number", "const": body}
+        elif body is bool:
+            return {"type": "boolean"}
+        elif isinstance(body, bool):
+            return {"type": "boolean", "const": body}
+        elif body is None:
+            return {"type": "null"}
+        elif body is type and issubclass(body, BaseModel):
+            return self._get_model_reference(body)
 
         # Default empty schema if type cannot be processed
         return {}
@@ -233,6 +242,17 @@ class SchemaProcessor:
             }
         }
 
+    def _map_response(self, response: ResponseSchema):
+        return {
+            response.status_code: {
+                "content": {
+                    "application/json": {
+                        "schema": self._parse_response_body(response.body)
+                    }
+                }
+            }
+        }
+
     def _map_responses(self, responses: list[ResponseSchema]):
         """
         Maps a list of response schemas to OpenAPI response objects.
@@ -245,16 +265,31 @@ class SchemaProcessor:
         """
         data = {}
 
-        for response_schema in responses:
-            data[response_schema.status_code] = {
-                "content": {
-                    "application/json": {
-                        "schema": self._parse_response_body(response_schema.body)
-                    }
-                }
-            }
+        for response in responses:
+            data.update(self._map_response(response))
 
         return data
+
+    def _map_endpoint(self, endpoint: EndpointMeta):
+        query_params = self._map_query(endpoint) if endpoint.query else []
+        path_params = self._map_path(endpoint) if endpoint.path else []
+
+        method = endpoint.method.lower()
+        return {
+            endpoint.rule: {
+                method: {
+                    "summary": endpoint.summary,
+                    "description": endpoint.description,
+                    "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
+                    "tags": endpoint.tags,
+                    "parameters": [*query_params, *path_params],
+                    "requestBody": self._map_body(endpoint) if endpoint.body else None,
+                    "responses": self._map_responses(endpoint.responses)
+                    if endpoint.responses
+                    else None,
+                }
+            }
+        }
 
     def _map_endpoints(self, endpoints: list[EndpointMeta]) -> dict:
         """
@@ -269,20 +304,6 @@ class SchemaProcessor:
         meta = defaultdict(dict)
 
         for endpoint in endpoints:
-            query_params = self._map_query(endpoint) if endpoint.query else []
-            path_params = self._map_path(endpoint) if endpoint.path else []
-
-            method = endpoint.method.lower()
-            meta[endpoint.rule][method] = {
-                "summary": endpoint.summary,
-                "description": endpoint.description,
-                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
-                "tags": endpoint.tags,
-                "parameters": [*query_params, *path_params],
-                "requestBody": self._map_body(endpoint) if endpoint.body else None,
-                "responses": self._map_responses(endpoint.responses)
-                if endpoint.responses
-                else None,
-            }
+            meta.update(self._map_endpoint(endpoint))
 
         return meta

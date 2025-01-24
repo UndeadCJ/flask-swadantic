@@ -159,7 +159,7 @@ class Schema:
         return self._tags
 
     @property
-    def schemas(self):
+    def schemas(self) -> list[Self]:
         """
         Returns the registered schemas.
 
