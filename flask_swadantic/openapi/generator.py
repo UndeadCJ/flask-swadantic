@@ -45,7 +45,7 @@ class OpenAPIGenerator(SchemaProcessor):
 
         while stack:
             schema = stack.pop()
-            result["prefix"].append(schema.url_prefix)
+            result["prefix"].insert(0, schema.url_prefix)
             result["endpoints"].extend(schema.endpoints)
             stack.extend(schema.schemas)
 
@@ -82,6 +82,10 @@ class OpenAPIGenerator(SchemaProcessor):
 
         schema_result = self._process_schema(schemas)
         self._map_prefixes_to_endpoints(schema_result)
+
+        print("UE", schema_result)
+        for endpoint in schema_result["endpoints"]:
+            print(endpoint.rule, endpoint.function_name)
 
         return {
             "paths": self._map_endpoints(schema_result["endpoints"]),

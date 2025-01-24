@@ -32,7 +32,7 @@ class Color(BaseModel):
 @test_schema.register_endpoint(
     summary="Get Color",
     description="Test test abacate verde",
-    responses=[ResponseSchema(200, str, description="Returns a user or color")],
+    responses=[ResponseSchema(200, Color, description="Returns a user or color")],
     tags=["Abacate"],
 )
 def get_test(name: str = PathSchema(description="Name of the color")):
@@ -43,7 +43,7 @@ def get_test(name: str = PathSchema(description="Name of the color")):
 @test_schema.register_endpoint(
     summary="Get List of Color",
     description="Test test abacate verde",
-    responses=[ResponseSchema(200, str, description="Returns a user or color")],
+    responses=[ResponseSchema(200, list[Color], description="Returns a user or color")],
     tags=["Abacate"],
 )
 def list_test(name: str = PathSchema(description="Name of the color")):
@@ -65,15 +65,4 @@ def list_test(name: str = PathSchema(description="Name of the color")):
     tags=["Abacate"],
 )
 def post_test():
-    return "", 200
-
-
-@test_bp.post("/test/abacate/<age>")
-@test_schema.register_endpoint(
-    summary="Create Age",
-    description="",
-    responses=[ResponseSchema(200, str, description="Returns a success message")],
-    tags=["Abacate"],
-)
-def post_age():
     return "", 200

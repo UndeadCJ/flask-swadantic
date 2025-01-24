@@ -1,3 +1,4 @@
+from collections import defaultdict
 from types import UnionType
 from typing import Type, Union
 from typing_extensions import get_origin, get_args
@@ -265,13 +266,12 @@ class SchemaProcessor:
         Returns:
             dict: Mapped endpoints in OpenAPI format.
         """
-        meta = {}
+        meta = defaultdict(dict)
 
         for endpoint in endpoints:
             query_params = self._map_query(endpoint) if endpoint.query else []
             path_params = self._map_path(endpoint) if endpoint.path else []
 
-            meta[endpoint.rule] = {}
             method = endpoint.method.lower()
             meta[endpoint.rule][method] = {
                 "summary": endpoint.summary,
