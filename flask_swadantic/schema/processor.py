@@ -1,4 +1,5 @@
 from collections import defaultdict
+from inspect import isclass
 from types import UnionType
 from typing import Type, Union
 from typing_extensions import get_origin, get_args
@@ -77,7 +78,11 @@ class SchemaProcessor:
         return {"$ref": f"#/components/schemas/{class_name}"}
 
     def _get_model_name(self, model: Type[BaseModel]):
-        return model.__name__.split(".")[-1]
+        class_name = model.__name__.split(".")[-1]
+        if hasattr(model, "model_config"):
+            return model.model_config.get("title", class_name)
+        else:
+            return class_name
 
     def _parse_response_body(self, body: BodyType) -> dict:
         """
@@ -127,7 +132,7 @@ class SchemaProcessor:
             return {"type": "boolean", "const": body}
         elif body is None:
             return {"type": "null"}
-        elif body is type and issubclass(body, BaseModel):
+        elif isclass(body) and issubclass(body, BaseModel):
             return self._get_model_reference(body)
 
         # Default empty schema if type cannot be processed
@@ -279,7 +284,7 @@ class SchemaProcessor:
             method: {
                 "summary": endpoint.summary,
                 "description": endpoint.description,
-                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
+                "operationId": f"{method}-{endpoint.summary.lower().replace(' ', '-')}",
                 "tags": endpoint.tags,
                 "parameters": [*query_params, *path_params],
                 "requestBody": self._map_body(endpoint) if endpoint.body else None,
