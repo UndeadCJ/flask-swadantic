@@ -29,6 +29,18 @@ def get_user(user_id: UUID = PathSchema(description="User ID")):
     return f"{user_id}", 200
 
 
+@user_bp.delete("/<uuid:id>")
+@user_schema.register_endpoint(
+    summary="Delete User",
+    description="Deletes a user by ID",
+    responses=[
+        ResponseSchema(204, None),
+    ],
+)
+def delete_user(user_id: UUID = PathSchema(description="User ID")):
+    return f"{user_id}", 204
+
+
 @user_bp.get("")
 @user_schema.register_endpoint(
     summary="List Users",

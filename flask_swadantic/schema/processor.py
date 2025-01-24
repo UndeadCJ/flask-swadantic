@@ -276,18 +276,16 @@ class SchemaProcessor:
 
         method = endpoint.method.lower()
         return {
-            endpoint.rule: {
-                method: {
-                    "summary": endpoint.summary,
-                    "description": endpoint.description,
-                    "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
-                    "tags": endpoint.tags,
-                    "parameters": [*query_params, *path_params],
-                    "requestBody": self._map_body(endpoint) if endpoint.body else None,
-                    "responses": self._map_responses(endpoint.responses)
-                    if endpoint.responses
-                    else None,
-                }
+            method: {
+                "summary": endpoint.summary,
+                "description": endpoint.description,
+                "operationId": f"{endpoint.summary.lower().replace(' ', '-')}-{method}",
+                "tags": endpoint.tags,
+                "parameters": [*query_params, *path_params],
+                "requestBody": self._map_body(endpoint) if endpoint.body else None,
+                "responses": self._map_responses(endpoint.responses)
+                if endpoint.responses
+                else None,
             }
         }
 
@@ -304,6 +302,6 @@ class SchemaProcessor:
         meta = defaultdict(dict)
 
         for endpoint in endpoints:
-            meta.update(self._map_endpoint(endpoint))
+            meta[endpoint.rule].update(self._map_endpoint(endpoint))
 
         return meta
