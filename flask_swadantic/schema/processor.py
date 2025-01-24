@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from inspect import isclass
 from types import UnionType
@@ -132,6 +133,8 @@ class SchemaProcessor:
             return {"type": "boolean", "const": body}
         elif body is None:
             return {"type": "null"}
+        elif isinstance(body, dict):
+            pass
         elif isclass(body) and issubclass(body, BaseModel):
             return self._get_model_reference(body)
 
@@ -294,6 +297,27 @@ class SchemaProcessor:
             }
         }
 
+    def convert_rule_segments(self, rule: str) -> str:
+        """
+        Converts Flask-style route variables to OpenAPI-style for a given rule.
+
+        Args:
+            rule (str): The endpoint rule (e.g., '/users/<string:user_id>').
+
+        Returns:
+            str: Converted rule (e.g., '/users/{user_id}').
+        """
+        raw_segments = re.split(r"(<[^:]+:[^>]+>)", rule)
+
+        segments = []
+        for segment in raw_segments:
+            if segment.startswith("<") and segment.endswith(">"):
+                segments.append(f"{{{segment[1:-1].split(':')[-1]}}}")
+            else:
+                segments.append(segment)
+
+        return "".join(segments)
+
     def _map_endpoints(self, endpoints: list[EndpointMeta]) -> dict:
         """
         Maps endpoints to the OpenAPI format.
@@ -307,6 +331,7 @@ class SchemaProcessor:
         meta = defaultdict(dict)
 
         for endpoint in endpoints:
-            meta[endpoint.rule].update(self._map_endpoint(endpoint))
+            rule = self.convert_rule_segments(endpoint.rule)
+            meta[rule].update(self._map_endpoint(endpoint))
 
         return meta
